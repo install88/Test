@@ -3,7 +3,17 @@ package com.example.demo.socket;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
+
+import org.apache.tomcat.util.http.parser.MediaType;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
 
 import javax.websocket.*;
 import javax.websocket.server.PathParam;
@@ -19,6 +29,14 @@ import java.util.concurrent.ConcurrentHashMap;
 @ServerEndpoint("/websocket/{username}")
 public class WebSocket {
 
+//    @Bean
+//    public RestTemplate restTemplate(RestTemplateBuilder builder) {
+//        return builder.build();
+//    }  
+    
+//    @Autowired
+//    private RestTemplate restTemplate;	
+	
     /**
      * 在线人数
      */
@@ -50,6 +68,15 @@ public class WebSocket {
      */
     @OnOpen
     public void onOpen(@PathParam("username") String username, Session session) {
+        RestTemplate restTemplate = new RestTemplate();
+        String url = "http://192.168.50.93:9082/api/v1/org/getMember/MEM15962756043170351";
+        HttpHeaders headers = new HttpHeaders();
+        HttpEntity<String> entity = new HttpEntity<String>(headers);
+        String strbody = restTemplate.exchange(url, HttpMethod.GET, entity,String.class).getBody();
+        JSONObject jsonObject = JSON.parseObject(strbody);
+        JSONObject usernameTest = jsonObject.getJSONObject("RET");
+        String usernameTest222 = usernameTest.getString("username");
+            	
         onlineNumber++;
 //        log.info("现在来连接的客户id：" + session.getId() + "用户名：" + username);
         this.username = username;
@@ -118,17 +145,17 @@ public class WebSocket {
 //            log.info("来自客户端消息：" + message + "客户端的id是：" + session.getId());
             JSONObject jsonObject = JSON.parseObject(message);
             String textMessage = jsonObject.getString("message");
-            String fromusername = jsonObject.getString("username");
+            String memID = jsonObject.getString("memID");
             String tousername = jsonObject.getString("to");
             //如果不是发给所有，那么就发给某一个人
             //messageType 1代表上线 2代表下线 3代表在线名单  4代表普通消息
             Map<String, Object> map1 = new HashMap<>();
             map1.put("messageType", 4);
             map1.put("textMessage", textMessage);
-            map1.put("fromusername", fromusername);
+            map1.put("fromusername", memID);
             if (tousername.equals("All")) {
                 map1.put("tousername", "所有人");
-                sendMessageAll(JSON.toJSONString(map1), fromusername);
+                sendMessageAll(JSON.toJSONString(map1), memID);
             } else {
                 map1.put("tousername", tousername);
                 sendMessageTo(JSON.toJSONString(map1), tousername);

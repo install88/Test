@@ -113,7 +113,7 @@
         }
         var message = {
             "message": document.getElementById('text').value,
-            "username": document.getElementById('username').value,
+            "memID": document.getElementById('username').value,
             "to": selectText
         };
         webSocket.send(JSON.stringify(message));
