@@ -69,21 +69,10 @@ public class WebSocket {
      * @param session
      */
     @OnOpen
-    public void onOpen(@PathParam("username") String username, Session session) {
-//        RestTemplate restTemplate = new RestTemplate();
-//        String url = "http://192.168.50.93:9082/api/v1/org/getMember/MEM15962756043170351";
-//        HttpHeaders headers = new HttpHeaders();
-//        HttpEntity<String> entity = new HttpEntity<String>(headers);
-//        String strbody = restTemplate.exchange(url, HttpMethod.GET, entity,String.class).getBody();
-//        JSONObject jsonObject = JSON.parseObject(strbody);
-//        JSONObject usernameTest = jsonObject.getJSONObject("RET");
-//        String usernameTest222 = usernameTest.getString("username");
-            	
+    public void onOpen(@PathParam("username") String username, Session session) {         	
         onlineNumber++;
-//        log.info("现在来连接的客户id：" + session.getId() + "用户名：" + username);
         this.username = username;
         this.session = session;
-//        log.info("有新连接加入！ 当前在线人数" + onlineNumber);
         try {
             //messageType 1代表上线 2代表下线 3代表在线名单 4代表普通消息
             //先给所有人发送通知，说我上线了
@@ -163,16 +152,16 @@ public class WebSocket {
             
             //如果不是发给所有，那么就发给某一个人
             //messageType 1代表上线 2代表下线 3代表在线名单  4代表普通消息
-            Map<String, Object> map1 = new HashMap<>();
-            map1.put("messageType", 4);
-            map1.put("textMessage", msgVO.getMessage());
-            map1.put("fromusername", msgVO.getFrom());
+//            Map<String, Object> map1 = new HashMap<>();
+//            map1.put("messageType", 4);
+//            map1.put("textMessage", msgVO.getMessage());
+//            map1.put("fromusername", msgVO.getFrom());
             if (msgVO.getTo().equals("All")) {
-                map1.put("tousername", "所有人");
-                sendMessageAll(JSON.toJSONString(map1));
+//                map1.put("tousername", "所有人");
+                sendMessageAll(JSON.toJSONString(msgVO));
             } else {
-                map1.put("tousername", msgVO.getTo());
-                sendMessageTo(JSON.toJSONString(map1), msgVO.getTo());
+//                map1.put("tousername", msgVO.getTo());
+                sendMessageTo(JSON.toJSONString(msgVO), msgVO.getTo());
             }
         } catch (Exception e) {
 //            log.info("发生了错误了");
@@ -186,6 +175,7 @@ public class WebSocket {
 
     public void sendMessageAll(String message) throws IOException {
         for (WebSocket item : clients.values()) {
+        	System.out.println(item.username);
             item.session.getAsyncRemote().sendText(message);
         }
     }
