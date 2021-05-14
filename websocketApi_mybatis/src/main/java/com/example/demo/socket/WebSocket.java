@@ -3,6 +3,7 @@ package com.example.demo.socket;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.example.demo.VO.MsgVO;
+import com.example.demo.service.MsgService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -14,8 +15,10 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.context.ContextLoader;
 
 import javax.websocket.*;
 import javax.websocket.server.PathParam;
@@ -26,20 +29,18 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Slf4j
+
 @Component
 @ServerEndpoint("/websocket/{username}")
 public class WebSocket {
-
-//    @Bean
-//    public RestTemplate restTemplate(RestTemplateBuilder builder) {
-//        return builder.build();
-//    }  
-    
-//    @Autowired
-//    private RestTemplate restTemplate;	
 	
-    /**
+	static MsgService msgService;
+	 
+    @Autowired
+    public void setMsgService(MsgService msgService){
+    	WebSocket.msgService = msgService;
+    }
+	/**
      * 在线人数
      */
     public static int onlineNumber = 0;
@@ -136,9 +137,11 @@ public class WebSocket {
         	//parse前端傳來的訊息，並封裝至msgVO中
             JSONObject jsonObject = JSON.parseObject(message);
             MsgVO msgVO = new MsgVO();
-            msgVO.setFrom(jsonObject.getString("memID"));
-            msgVO.setTo(jsonObject.getString("to"));
-            msgVO.setMessage(jsonObject.getString("message"));
+            msgVO.setMsg_from(jsonObject.getString("memID"));
+            msgVO.setMsg_to(jsonObject.getString("to"));
+            msgVO.setMsg_content(jsonObject.getString("message"));            
+            msgVO.setMsg_status(jsonObject.getInteger("msg_status"));
+            msgService.saveMsg(msgVO);
                                    
             //呼叫getMemberInfoById
 //            RestTemplate restTemplate = new RestTemplate();
@@ -156,12 +159,12 @@ public class WebSocket {
 //            map1.put("messageType", 4);
 //            map1.put("textMessage", msgVO.getMessage());
 //            map1.put("fromusername", msgVO.getFrom());
-            if (msgVO.getTo().equals("All")) {
+            if (msgVO.getMsg_to().equals("All")) {
 //                map1.put("tousername", "所有人");
                 sendMessageAll(JSON.toJSONString(msgVO));
             } else {
 //                map1.put("tousername", msgVO.getTo());
-                sendMessageTo(JSON.toJSONString(msgVO), msgVO.getTo());
+                sendMessageTo(JSON.toJSONString(msgVO), msgVO.getMsg_to());
             }
         } catch (Exception e) {
 //            log.info("发生了错误了");

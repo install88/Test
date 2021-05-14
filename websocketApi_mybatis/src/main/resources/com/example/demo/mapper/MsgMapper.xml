@@ -6,4 +6,9 @@
         select * from message
     </select>
     
+	<insert id="Msginsert" parameterType="MsgVO">
+		insert into message(msg_from, msg_to, msg_content, msg_status)
+		values(#{msg_from, jdbcType=VARCHAR}, #{msg_to, jdbcType=VARCHAR}, #{msg_content, jdbcType=VARCHAR}, #{msg_status, jdbcType=INTEGER})
+	</insert>    
+    
 </mapper>
