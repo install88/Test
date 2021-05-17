@@ -4,6 +4,9 @@ import com.example.demo.VO.MsgVO;
 
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.Map;
+
+import org.apache.ibatis.annotations.Param;
 
 
 public interface MsgMapper{
@@ -16,13 +19,10 @@ public interface MsgMapper{
     List<MsgVO> queryMsgList();
     
     //insert訊息至資料庫
-    int Msginsert(MsgVO msgVO);
+    int MsgSave(MsgVO msgVO);
         
-//    select * 
-//    from message msg 
-//    where msg_to = "陳維正" and msg_time=(select max(msg_time) from message where msg_from=msg.msg_from);
     //User登入時點開好友清單，只顯示其好友們最新一筆資料(像line一樣)
-    List<MsgVO> getAllFromLastMessage(String msg_to);  
+    List<MsgVO> getAllFromLastMessage(@Param("msg_to") String msg_to);  
     
     
     //點開對象聊天室後，查詢與該對象的聊天紀錄
@@ -30,4 +30,8 @@ public interface MsgMapper{
     
     //將該好友訊息狀態從未讀改成已讀
     int msgUpdateStatus(String msg_from,String msg_to,Timestamp msg_time);
+    
+    //取得未讀訊息筆數
+    List<Map<String,Object>> getUnreadCount(String msg_to);
+ 
 }

@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.tomcat.util.http.parser.MediaType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -24,7 +25,9 @@ import javax.websocket.*;
 import javax.websocket.server.PathParam;
 import javax.websocket.server.ServerEndpoint;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,12 +37,18 @@ import java.util.concurrent.ConcurrentHashMap;
 @ServerEndpoint("/websocket/{username}")
 public class WebSocket {
 	
-	static MsgService msgService;
+
+	private static ApplicationContext applicationContext;
 	 
-    @Autowired
-    public void setMsgService(MsgService msgService){
-    	WebSocket.msgService = msgService;
-    }
+	public static void setApplicationContext(ApplicationContext context) {
+	    applicationContext = context;
+	}
+//	static MsgService msgService;
+	private MsgService msgService;	 
+//    @Autowired
+//    public void setMsgService(MsgService msgService){
+//    	WebSocket.msgService = msgService;
+//    }
 	/**
      * 在线人数
      */
@@ -74,13 +83,14 @@ public class WebSocket {
         onlineNumber++;
         this.username = username;
         this.session = session;
+        msgService = applicationContext.getBean(MsgService.class);
         try {
             //messageType 1代表上线 2代表下线 3代表在线名单 4代表普通消息
             //先给所有人发送通知，说我上线了
             Map<String, Object> map1 = new HashMap<>();
             map1.put("messageType", 1);
             map1.put("username", username);
-            sendMessageAll(JSON.toJSONString(map1));
+//            sendMessageAll(JSON.toJSONString(map1));
 
             //把自己的信息加入到map当中去
             clients.put(username, this);
@@ -90,7 +100,20 @@ public class WebSocket {
             //移除掉自己
             Set<String> set = clients.keySet();
             map2.put("onlineUsers", set);
-            sendMessageTo(JSON.toJSONString(map2), username);
+//            sendMessageTo(JSON.toJSONString(map2), username);
+            
+            //查詢給自己的訊息
+            List lastMsg_list = msgService.getAllFromLastMessage(username);
+            Map<String, Object> lastMsg_map = new HashMap<>();
+            lastMsg_map.put("showLastMsg", lastMsg_list);
+            sendMessageTo(JSON.toJSONString(lastMsg_map), username);
+            
+            //查詢未讀訊息count
+            List msg_count_list = msgService.getUnreadCount(username);
+            Map<String, Object> msg_count_map = new HashMap<>();
+            msg_count_map.put("showMsgCount", msg_count_list);
+            sendMessageTo(JSON.toJSONString(msg_count_map), username);      
+                        
         } catch (IOException e) {
 //            log.info(username + "上线的时候通知所有人发生了错误");
         }
@@ -113,16 +136,16 @@ public class WebSocket {
         //webSockets.remove(this);
         clients.remove(username);
         try {
-            //messageType 1代表上线 2代表下线 3代表在线名单  4代表普通消息
+            //messageType 1代表上線 2代表下線 3代表在線名单  4代表普通消息
             Map<String, Object> map1 = new HashMap<>();
             map1.put("messageType", 2);
             map1.put("onlineUsers", clients.keySet());
             map1.put("username", username);
             sendMessageAll(JSON.toJSONString(map1));
         } catch (IOException e) {
-//            log.info(username + "下线的时候通知所有人发生了错误");
+//            log.info(username + "下線發生錯誤");
         }
-//        log.info("有连接关闭！ 当前在线人数" + onlineNumber);
+//        log.info("連接關閉 當前人數=" + onlineNumber);
     }
 
     /**
@@ -134,14 +157,25 @@ public class WebSocket {
     @OnMessage
     public void onMessage(String message, Session session) {
         try {
+        	msgService = applicationContext.getBean(MsgService.class);        	
         	//parse前端傳來的訊息，並封裝至msgVO中
             JSONObject jsonObject = JSON.parseObject(message);
-            MsgVO msgVO = new MsgVO();
-            msgVO.setMsg_from(jsonObject.getString("memID"));
-            msgVO.setMsg_to(jsonObject.getString("to"));
-            msgVO.setMsg_content(jsonObject.getString("message"));            
-            msgVO.setMsg_status(jsonObject.getInteger("msg_status"));
-            msgService.saveMsg(msgVO);
+            if("save".equals(jsonObject.getString("msg_type"))) {
+                MsgVO msgVO = new MsgVO();
+                msgVO.setMsg_from(jsonObject.getString("memID"));
+                msgVO.setMsg_to(jsonObject.getString("to"));
+                msgVO.setMsg_content(jsonObject.getString("message"));            
+                msgVO.setMsg_status(jsonObject.getInteger("msg_status"));
+                msgService.saveMsg(msgVO);            	
+            }else {
+                MsgVO msgVO = new MsgVO();
+                String msg_from = jsonObject.getString("memID");
+                String msg_to = jsonObject.getString("to");
+                List list = msgService.getConversationRecord(msg_from, msg_to);
+                System.out.println(list);
+                sendMessageTo(JSON.toJSONString(list), msg_from);
+            }
+
                                    
             //呼叫getMemberInfoById
 //            RestTemplate restTemplate = new RestTemplate();
@@ -159,15 +193,15 @@ public class WebSocket {
 //            map1.put("messageType", 4);
 //            map1.put("textMessage", msgVO.getMessage());
 //            map1.put("fromusername", msgVO.getFrom());
-            if (msgVO.getMsg_to().equals("All")) {
+//            if (msgVO.getMsg_to().equals("All")) {
 //                map1.put("tousername", "所有人");
-                sendMessageAll(JSON.toJSONString(msgVO));
-            } else {
+//                sendMessageAll(JSON.toJSONString(msgVO));
+//            } else {
 //                map1.put("tousername", msgVO.getTo());
-                sendMessageTo(JSON.toJSONString(msgVO), msgVO.getMsg_to());
-            }
+//                sendMessageTo(JSON.toJSONString(msgVO), msgVO.getMsg_to());
+//            }
         } catch (Exception e) {
-//            log.info("发生了错误了");
+//            log.info("發生錯誤);
         }
     }
 

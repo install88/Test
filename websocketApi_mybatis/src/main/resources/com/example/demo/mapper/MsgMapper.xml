@@ -6,9 +6,21 @@
         select * from message
     </select>
     
-	<insert id="Msginsert" parameterType="MsgVO">
+	<insert id="MsgSave" parameterType="MsgVO">
 		insert into message(msg_from, msg_to, msg_content, msg_status)
 		values(#{msg_from, jdbcType=VARCHAR}, #{msg_to, jdbcType=VARCHAR}, #{msg_content, jdbcType=VARCHAR}, #{msg_status, jdbcType=INTEGER})
-	</insert>    
+	</insert> 
+	
+    <select id="getAllFromLastMessage" resultType="MsgVO">
+        select * from message msg  where msg_to = #{msg_to} and msg_time=(select max(msg_time) from message where msg_from=msg.msg_from)
+    </select>
+    
+    <select id="getConversationRecord" resultType="MsgVO">
+        select * from message where (msg_from = #{msg_from} and msg_to = #{msg_to}) or (msg_from = #{msg_to} and msg_to = #{msg_from}) order by msg_time
+    </select>
+    
+    <select id="getUnreadCount" resultType="map">
+        select msg_from,count(*) as msg_count from message where msg_to = #{msg_to} and msg_status=0 group by msg_from
+    </select>        
     
 </mapper>

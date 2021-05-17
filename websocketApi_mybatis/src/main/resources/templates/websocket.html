@@ -16,6 +16,8 @@
 <div style="margin: auto;text-align: center">
     <select id="onLineUser">
         <option>--所有--</option>
+        <option>Andy</option>
+        <option>陳維正</option>
     </select>
     <input id="text" type="text"/>
     <button onclick="send()">發送</button>
@@ -45,63 +47,42 @@
         };
 
 		//接收後端sever發送的消息
-        webSocket.onmessage = function (evt) {
+        webSocket.onmessage = function (evt) {	
             var received_msg = evt.data;                    
             console.log("数据已接收:" + received_msg);
             var obj = JSON.parse(received_msg);
-            console.log("可以解析成json:" + obj.messageType);
-            //1代表上线 2代表下线 3代表在线名单 4代表普通消息
-            if (obj.messageType == 1) {
-                //把名称放入到selection当中供选择
-                var onlineName = obj.username;
-                var option = "<option>" + onlineName + "</option>";
-                $("#onLineUser").append(option);
-                setMessageInnerHTML(onlineName + "上线了");
-            } else if (obj.messageType == 2) {
-                $("#onLineUser").empty();
-                var onlineName = obj.onlineUsers;
-                var offlineName = obj.username;
-                var option = "<option>" + "--所有--" + "</option>";
-                for (var i = 0; i < onlineName.length; i++) {
-                    if (!(onlineName[i] == document.getElementById('username').value)) {
-                        option += "<option>" + onlineName[i] + "</option>"
-                    }
-                }
-                $("#onLineUser").append(option);
-
-                setMessageInnerHTML(offlineName + "下线了");
-            } else if (obj.messageType == 3) {
-                var onlineName = obj.onlineUsers;
-                var option = null;
-                for (var i = 0; i < onlineName.length; i++) {
-                    if (!(onlineName[i] == document.getElementById('username').value)) {
-                        option += "<option>" + onlineName[i] + "</option>"
-                    }
-                }
-                $("#onLineUser").append(option);
-                console.log("获取了在线的名单" + onlineName.toString());
-            } else {
-                setMessageInnerHTML(obj.fromusername + "对" + obj.tousername + "说：" + obj.textMessage);
-            }
+            var msg_type = Object.keys(obj)[0];
+            console.log("msg_type=" + msg_type);
+            if(msg_type == "showLastMsg"){
+                obj[msg_type].forEach(function(msgVO){
+    				console.log("發送人:" + msgVO.msg_from);
+    				console.log("接收人:" + msgVO.msg_to);
+    				console.log("訊息: "  + msgVO.msg_content);
+    				console.log("狀態: "  + msgVO.msg_status);
+    				console.log("時間: "  + new Date(msgVO.msg_time));
+    				console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+                });            	
+            }else{
+                obj[msg_type].forEach(function(msgVO){
+    				console.log("發送人:" + msgVO.msg_from);
+    				console.log("筆數: "  + msgVO.msg_count);
+    				console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+                });            	
+            }           
         };
 
-        //连接关闭的回调事件
+        //連接關閉的回調事件
         webSocket.onclose = function () {
             console.log("连接已关闭...");
             setMessageInnerHTML("连接已经关闭....");
         };
     } else {
-        // 浏览器不支持 WebSocket
-        alert("您的浏览器不支持 WebSocket!");
-    }
-
-    //将消息显示在网页上
-    function setMessageInnerHTML(innerHTML) {
-        document.getElementById('message').innerHTML += innerHTML + '<br/>';
+        // 瀏覽器不支持 WebSocket
+        alert("您的瀏覽器不支持 WebSocket!");
     }
 
     function closeWebSocket() {
-        //直接关闭websocket的连接
+        //直接關閉websocket的連接
         webSocket.close();
     }
 
@@ -116,7 +97,8 @@
             "message": document.getElementById('text').value,
             "memID": document.getElementById('username').value,
             "to": selectText,
-            "msg_status" : 0
+            "msg_status" : 0,
+            "msg_type" : "save"
         };
         
       	//發送訊息至後端server
@@ -124,6 +106,20 @@
         $("#text").val("");
 
     }
+    
+    $(document).ready(function(){
+        $("#onLineUser").change(function(){
+        	var msg_to = $("#onLineUser").val();
+            var message = {
+//                     "message": document.getElementById('text').value,
+                    "memID": document.getElementById('username').value,
+                    "to": msg_to,
+                    "msg_type" : "getMessage"
+//                     "msg_status" : 0
+                };
+            webSocket.send(JSON.stringify(message));            
+        });
+    });    
 </script>
 
 </html>
