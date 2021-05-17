@@ -15,7 +15,7 @@ public class MsgService {
     private MsgMapper msgMapper;
     
     public void saveMsg(MsgVO msgVO) {
-    	msgMapper.MsgSave(msgVO);
+    	msgMapper.msgSave(msgVO);
     }
     
     public List<MsgVO> getAllFromLastMessage(String msg_to) {
@@ -29,4 +29,8 @@ public class MsgService {
     public List<Map<String,Object>> getUnreadCount(String msg_to) {
     	return msgMapper.getUnreadCount(msg_to);
     }     
+    
+    public void msgUpdateStatus(String msg_from, String msg_to) {
+    	msgMapper.msgUpdateStatus(msg_from, msg_to);
+    }    
 }

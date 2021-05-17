@@ -86,7 +86,10 @@
         webSocket.close();
     }
 
+    
+    //點擊發送按鈕送出訊息
     function send() {
+    	console.log("msg_type =" + msg_type);
         var selectText = $("#onLineUser").find("option:selected").text();
         if (selectText == "--所有--") {
             selectText = "All";
@@ -107,15 +110,14 @@
 
     }
     
+    //當選取清單變動時，查詢與該User的聊天紀錄
     $(document).ready(function(){
         $("#onLineUser").change(function(){
-        	var msg_to = $("#onLineUser").val();
+        	var msg_from = $("#onLineUser").val();
             var message = {
-//                     "message": document.getElementById('text').value,
-                    "memID": document.getElementById('username').value,
-                    "to": msg_to,
+                    "msg_from": msg_from,
+                    "msg_to": document.getElementById('username').value,
                     "msg_type" : "getMessage"
-//                     "msg_status" : 0
                 };
             webSocket.send(JSON.stringify(message));            
         });

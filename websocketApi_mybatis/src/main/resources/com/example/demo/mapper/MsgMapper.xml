@@ -6,7 +6,7 @@
         select * from message
     </select>
     
-	<insert id="MsgSave" parameterType="MsgVO">
+	<insert id="msgSave" parameterType="MsgVO">
 		insert into message(msg_from, msg_to, msg_content, msg_status)
 		values(#{msg_from, jdbcType=VARCHAR}, #{msg_to, jdbcType=VARCHAR}, #{msg_content, jdbcType=VARCHAR}, #{msg_status, jdbcType=INTEGER})
 	</insert> 
@@ -23,4 +23,8 @@
         select msg_from,count(*) as msg_count from message where msg_to = #{msg_to} and msg_status=0 group by msg_from
     </select>        
     
+	<update  id="msgUpdateStatus" parameterType="MsgVO">
+		update message set msg_status=1
+		where msg_from = #{msg_from} and msg_to= #{msg_to} and msg_status=0
+	</update >     
 </mapper>

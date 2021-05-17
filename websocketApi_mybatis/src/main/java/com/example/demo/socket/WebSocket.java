@@ -35,22 +35,17 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 @ServerEndpoint("/websocket/{username}")
-public class WebSocket {
-	
-
+public class WebSocket {	
 	private static ApplicationContext applicationContext;
 	 
 	public static void setApplicationContext(ApplicationContext context) {
 	    applicationContext = context;
 	}
-//	static MsgService msgService;
 	private MsgService msgService;	 
-//    @Autowired
-//    public void setMsgService(MsgService msgService){
-//    	WebSocket.msgService = msgService;
-//    }
+	
+	
 	/**
-     * 在线人数
+     * 在線人數
      */
     public static int onlineNumber = 0;
     /**
@@ -128,7 +123,7 @@ public class WebSocket {
     }
 
     /**
-     * 连接关闭
+     * 連接關閉
      */
     @OnClose
     public void onClose() {
@@ -161,19 +156,29 @@ public class WebSocket {
         	//parse前端傳來的訊息，並封裝至msgVO中
             JSONObject jsonObject = JSON.parseObject(message);
             if("save".equals(jsonObject.getString("msg_type"))) {
+            	//發送訊息保存至DB
                 MsgVO msgVO = new MsgVO();
                 msgVO.setMsg_from(jsonObject.getString("memID"));
                 msgVO.setMsg_to(jsonObject.getString("to"));
                 msgVO.setMsg_content(jsonObject.getString("message"));            
                 msgVO.setMsg_status(jsonObject.getInteger("msg_status"));
-                msgService.saveMsg(msgVO);            	
+                msgService.saveMsg(msgVO);
+                
+                //將訊息推撥至對方
+//                sendMessageTo(JSON.toJSONString(jsonObject.getString("message")), msg_to);
             }else {
+            	//查詢與對方的聊天紀錄
                 MsgVO msgVO = new MsgVO();
-                String msg_from = jsonObject.getString("memID");
-                String msg_to = jsonObject.getString("to");
-                List list = msgService.getConversationRecord(msg_from, msg_to);
-                System.out.println(list);
-                sendMessageTo(JSON.toJSONString(list), msg_from);
+                String msg_from = jsonObject.getString("msg_from");
+                String msg_to = jsonObject.getString("msg_to");
+                List msg_record_list = msgService.getConversationRecord(msg_from, msg_to);
+                Map<String, Object> msg_record_map = new HashMap<>();
+                msg_record_map.put("showRecord", msg_record_list);                
+                System.out.println(msg_record_list);
+                sendMessageTo(JSON.toJSONString(msg_record_map), msg_to);
+                
+                //令訊息狀態改為已讀
+                msgService.msgUpdateStatus(msg_from, msg_to);
             }
 
                                    

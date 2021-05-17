@@ -19,7 +19,7 @@ public interface MsgMapper{
     List<MsgVO> queryMsgList();
     
     //insert訊息至資料庫
-    int MsgSave(MsgVO msgVO);
+    int msgSave(MsgVO msgVO);
         
     //User登入時點開好友清單，只顯示其好友們最新一筆資料(像line一樣)
     List<MsgVO> getAllFromLastMessage(@Param("msg_to") String msg_to);  
@@ -33,5 +33,7 @@ public interface MsgMapper{
     
     //取得未讀訊息筆數
     List<Map<String,Object>> getUnreadCount(String msg_to);
+    
+    int msgUpdateStatus(String msg_from,String msg_to);
  
 }
