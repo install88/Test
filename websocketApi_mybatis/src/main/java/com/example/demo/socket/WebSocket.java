@@ -49,68 +49,53 @@ public class WebSocket {
      */
     public static int onlineNumber = 0;
     /**
-     * 以用户的姓名为key，WebSocket为对象保存起来
+     * 以User姓名为key，將WebSocket為對象保存起来
      */
     private static Map<String, WebSocket> clients = new ConcurrentHashMap<String, WebSocket>();
     /**
-     * 会话
+     * 儲存session
      */
     private Session session;
     /**
-     * 用户名称
+     * User名稱
      */
     private String username;
 
     /**
-     * OnOpen 表示有浏览器链接过来的时候被调用
-     * OnClose 表示浏览器发出关闭请求的时候被调用
-     * OnMessage 表示浏览器发消息的时候被调用
-     * OnError 表示有错误发生，比如网络断开了等等
+     * OnOpen 表示有瀏覽器連接過來的時候調用
+     * OnClose 表示有瀏覽器發出關閉請求的時候被調用
+     * OnMessage 表示有瀏覽器發消息的時候被調用
+     * OnError 表示有錯誤發生，比如網路斷掉
      */
 
     /**
-     * 建立连接
+     * 建立連線
      *
      * @param session
      */
     @OnOpen
-    public void onOpen(@PathParam("username") String username, Session session) {         	
-        onlineNumber++;
+    public void onOpen(@PathParam("username") String username, Session session) {
+    	addOnlineCount();
         this.username = username;
-        this.session = session;
-        msgService = applicationContext.getBean(MsgService.class);
+        this.session = session;        
         try {
-            //messageType 1代表上线 2代表下线 3代表在线名单 4代表普通消息
-            //先给所有人发送通知，说我上线了
-            Map<String, Object> map1 = new HashMap<>();
-            map1.put("messageType", 1);
-            map1.put("username", username);
-//            sendMessageAll(JSON.toJSONString(map1));
-
-            //把自己的信息加入到map当中去
+            //把自己的資訊加入到map管理
             clients.put(username, this);
-            //给自己发一条消息：告诉自己现在都有谁在线
-            Map<String, Object> map2 = new HashMap<>();
-            map2.put("messageType", 3);
-            //移除掉自己
-            Set<String> set = clients.keySet();
-            map2.put("onlineUsers", set);
-//            sendMessageTo(JSON.toJSONString(map2), username);
             
             //查詢給自己的訊息
+            msgService = applicationContext.getBean(MsgService.class);
             List lastMsg_list = msgService.getAllFromLastMessage(username);
             Map<String, Object> lastMsg_map = new HashMap<>();
             lastMsg_map.put("showLastMsg", lastMsg_list);
             sendMessageTo(JSON.toJSONString(lastMsg_map), username);
-            
             //查詢未讀訊息count
             List msg_count_list = msgService.getUnreadCount(username);
             Map<String, Object> msg_count_map = new HashMap<>();
             msg_count_map.put("showMsgCount", msg_count_list);
-            sendMessageTo(JSON.toJSONString(msg_count_map), username);      
-                        
+            sendMessageTo(JSON.toJSONString(msg_count_map), username);                              
         } catch (IOException e) {
-//            log.info(username + "上线的时候通知所有人发生了错误");
+        	//上線的時候發生了錯誤
+        	System.out.println(e.getMessage());
         }
 
 
@@ -118,8 +103,8 @@ public class WebSocket {
 
     @OnError
     public void onError(Session session, Throwable error) {
-//        log.info("服务端发生了错误" + error.getMessage());
-        //error.printStackTrace();
+    	//Server發生錯誤
+    	System.out.println(error.getMessage());
     }
 
     /**
@@ -127,20 +112,13 @@ public class WebSocket {
      */
     @OnClose
     public void onClose() {
-        onlineNumber--;
-        //webSockets.remove(this);
-        clients.remove(username);
         try {
-            //messageType 1代表上線 2代表下線 3代表在線名单  4代表普通消息
-            Map<String, Object> map1 = new HashMap<>();
-            map1.put("messageType", 2);
-            map1.put("onlineUsers", clients.keySet());
-            map1.put("username", username);
-            sendMessageAll(JSON.toJSONString(map1));
-        } catch (IOException e) {
-//            log.info(username + "下線發生錯誤");
+        	subOnlineCount();
+            clients.remove(username);
+        } catch (Exception e) {
+        	//下線發生錯誤
+        	System.out.println(e.getMessage());
         }
-//        log.info("連接關閉 當前人數=" + onlineNumber);
     }
 
     /**
@@ -158,14 +136,18 @@ public class WebSocket {
             if("save".equals(jsonObject.getString("msg_type"))) {
             	//發送訊息保存至DB
                 MsgVO msgVO = new MsgVO();
-                msgVO.setMsg_from(jsonObject.getString("memID"));
-                msgVO.setMsg_to(jsonObject.getString("to"));
+                msgVO.setMsg_from(jsonObject.getString("msg_from"));
+                msgVO.setMsg_to(jsonObject.getString("msg_to"));
                 msgVO.setMsg_content(jsonObject.getString("message"));            
                 msgVO.setMsg_status(jsonObject.getInteger("msg_status"));
                 msgService.saveMsg(msgVO);
                 
                 //將訊息推撥至對方
-//                sendMessageTo(JSON.toJSONString(jsonObject.getString("message")), msg_to);
+                Map<String, Object> msg_receive_map = new HashMap<>();
+                msg_receive_map.put("receive", msgVO);
+                if(clients.get(msgVO.getMsg_to())!= null) {
+                	sendMessageTo(JSON.toJSONString(msg_receive_map), msgVO.getMsg_to());
+                }                
             }else {
             	//查詢與對方的聊天紀錄
                 MsgVO msgVO = new MsgVO();
@@ -210,11 +192,15 @@ public class WebSocket {
         }
     }
 
+    
+    //將訊息送至指定用戶
     public void sendMessageTo(String message, String ToUserName) throws IOException {
     	WebSocket itemTest = clients.get(ToUserName);
-    	itemTest.session.getAsyncRemote().sendText(message);
+		itemTest.session.getAsyncRemote().sendText(message);    	
     }
-
+    
+    
+    //廣播給在線上的所有User
     public void sendMessageAll(String message) throws IOException {
         for (WebSocket item : clients.values()) {
         	System.out.println(item.username);
@@ -222,8 +208,19 @@ public class WebSocket {
         }
     }
 
+    //取得在線人數
     public static synchronized int getOnlineCount() {
         return onlineNumber;
     }
+    
+    //用戶連線時，在線人數++    
+    public static synchronized void addOnlineCount() {
+    	WebSocket.onlineNumber++;
+    }
+    
+    //用戶離線時，在線人數--    
+    public static synchronized void subOnlineCount() {
+    	WebSocket.onlineNumber--;
+    }    
 
 }

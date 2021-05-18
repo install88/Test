@@ -2,9 +2,9 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.demo.mapper.MsgMapper">
 
-    <select id="queryMsgList" resultType="map">
-        select * from message
-    </select>
+<!--     <select id="queryMsgList" resultType="map"> -->
+<!--         select * from message -->
+<!--     </select> -->
     
 	<insert id="msgSave" parameterType="MsgVO">
 		insert into message(msg_from, msg_to, msg_content, msg_status)

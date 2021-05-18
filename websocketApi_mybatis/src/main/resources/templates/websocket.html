@@ -49,7 +49,7 @@
 		//接收後端sever發送的消息
         webSocket.onmessage = function (evt) {	
             var received_msg = evt.data;                    
-            console.log("数据已接收:" + received_msg);
+            console.log("數據已接收:" + received_msg);
             var obj = JSON.parse(received_msg);
             var msg_type = Object.keys(obj)[0];
             console.log("msg_type=" + msg_type);
@@ -62,10 +62,19 @@
     				console.log("時間: "  + new Date(msgVO.msg_time));
     				console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
                 });            	
-            }else{
+            }else if (msg_type == "showMsgCount"){
                 obj[msg_type].forEach(function(msgVO){
     				console.log("發送人:" + msgVO.msg_from);
     				console.log("筆數: "  + msgVO.msg_count);
+    				console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+                });            	
+            }else{
+                obj[msg_type].forEach(function(msgVO){
+    				console.log("發送人:" + msgVO.msg_from);
+    				console.log("接收人:" + msgVO.msg_to);
+    				console.log("訊息: "  + msgVO.msg_content);
+    				console.log("狀態: "  + msgVO.msg_status);
+    				console.log("時間: "  + new Date(msgVO.msg_time));
     				console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
                 });            	
             }           
@@ -73,8 +82,8 @@
 
         //連接關閉的回調事件
         webSocket.onclose = function () {
-            console.log("连接已关闭...");
-            setMessageInnerHTML("连接已经关闭....");
+            console.log("連接已關閉...");
+//             setMessageInnerHTML("连接已经关闭....");
         };
     } else {
         // 瀏覽器不支持 WebSocket
@@ -89,17 +98,16 @@
     
     //點擊發送按鈕送出訊息
     function send() {
-    	console.log("msg_type =" + msg_type);
         var selectText = $("#onLineUser").find("option:selected").text();
         if (selectText == "--所有--") {
             selectText = "All";
         } else {
-            setMessageInnerHTML(document.getElementById('username').value + "对" + selectText + "说：" + $("#text").val());
+//             setMessageInnerHTML(document.getElementById('username').value + "对" + selectText + "说：" + $("#text").val());
         }
-        var message = {
+        var message = {            
+            "msg_from": document.getElementById('username').value,
+            "msg_to": selectText,
             "message": document.getElementById('text').value,
-            "memID": document.getElementById('username').value,
-            "to": selectText,
             "msg_status" : 0,
             "msg_type" : "save"
         };
@@ -107,10 +115,9 @@
       	//發送訊息至後端server
         webSocket.send(JSON.stringify(message));
         $("#text").val("");
-
     }
     
-    //當選取清單變動時，查詢與該User的聊天紀錄
+    //當選取清單變動時，查詢與該User的聊天紀錄      
     $(document).ready(function(){
         $("#onLineUser").change(function(){
         	var msg_from = $("#onLineUser").val();

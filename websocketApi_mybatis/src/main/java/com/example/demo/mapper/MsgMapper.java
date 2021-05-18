@@ -16,7 +16,7 @@ public interface MsgMapper{
      */
 	
 	//測試查詢message全部資料
-    List<MsgVO> queryMsgList();
+//    List<MsgVO> queryMsgList();
     
     //insert訊息至資料庫
     int msgSave(MsgVO msgVO);
@@ -34,6 +34,7 @@ public interface MsgMapper{
     //取得未讀訊息筆數
     List<Map<String,Object>> getUnreadCount(String msg_to);
     
+    //將未讀訊息修改成已讀狀態
     int msgUpdateStatus(String msg_from,String msg_to);
  
 }
