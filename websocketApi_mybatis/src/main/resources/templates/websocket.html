@@ -9,35 +9,39 @@
 </head>
 
 <body>
-<div style="margin: auto;text-align: center">
-    <h1>Welcome to websocket</h1>
-</div>
-<br/>
-<div style="margin: auto;text-align: center">
-    <select id="onLineUser">
-        <option>--所有--</option>
-        <option>Andy</option>
-        <option>陳維正</option>
-    </select>
-    <input id="text" type="text"/>
-    <button onclick="send()">發送</button>
-</div>
-<br>
-<div style="margin-right: 10px;text-align: right">
-    <button onclick="closeWebSocket()">关闭连接</button>
-</div>
-<hr/>
-<div id="message" style="text-align: center;"></div>
-<input type="text" th:value="${username}" id="username" style="display: none"/>
+	<div style="margin: auto;text-align: center">
+	    <h1>Welcome to websocket</h1>
+	</div>
+	<br/>
+	<div style="margin: auto;text-align: center">
+	    <select id="onLineUser">
+	        <option>--所有--</option>
+	        <option>Andy</option>
+	        <option>陳維正</option>
+	    </select>
+	    <input id="text" type="text"/>
+	    <button onclick="send()">發送</button>
+	</div>
+	<br>
+	<div style="margin-right: 10px;text-align: right">
+	    <button onclick="closeWebSocket()">关闭连接</button>
+	</div>
+	<hr/>
+	<div id="message" style="text-align: center;">
+		
+	</div>
+	<input type="text" th:value="${username}" id="username" style="display: none"/>
 </body>
 
 
 <script type="text/javascript">
+	let userMap= new Map();
+	const userName = document.getElementById('username').value;
     var webSocket;
     var commWebSocket;
     if ("WebSocket" in window) {
     	//ws://localhost:8080/websocket/{memID}
-        webSocket = new WebSocket("ws://localhost:8080/websocket/" + document.getElementById('username').value);
+        webSocket = new WebSocket("ws://localhost:8080/websocket/" + userName);
 
         //連通之後觸發
         webSocket.onopen = function () {
@@ -61,14 +65,17 @@
     				console.log("狀態: "  + msgVO.msg_status);
     				console.log("時間: "  + new Date(msgVO.msg_time));
     				console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+    				setMessageInnerHTML(msgVO.msg_from + ":" + msgVO.msg_content);
                 });            	
-            }else if (msg_type == "showMsgCount"){
+            }else if(msg_type == "showMsgCount"){
                 obj[msg_type].forEach(function(msgVO){
     				console.log("發送人:" + msgVO.msg_from);
     				console.log("筆數: "  + msgVO.msg_count);
     				console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+    				userMap.set(msgVO.msg_from,msgVO.msg_count);
+    				setMessageInnerHTML(msgVO.msg_from + ":" + userMap.get(msgVO.msg_from) + "筆未讀");
                 });            	
-            }else{
+            }else if(msg_type == "showRecord"){
                 obj[msg_type].forEach(function(msgVO){
     				console.log("發送人:" + msgVO.msg_from);
     				console.log("接收人:" + msgVO.msg_to);
@@ -76,8 +83,34 @@
     				console.log("狀態: "  + msgVO.msg_status);
     				console.log("時間: "  + new Date(msgVO.msg_time));
     				console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+    				setMessageInnerHTML(msgVO.msg_from + ":" + msgVO.msg_content);    				
+//     				userMap.set(msgVO.msg_from,msgVO.msg_count);
+//     				setMessageInnerHTML(msgVO.msg_from + "的未讀訊息有" + userMap.get(msgVO.msg_from));
                 });            	
-            }           
+            }else{
+            	var msgVO = obj[msg_type];
+            	setMessageInnerHTML(msgVO.msg_from + ":" + msgVO.msg_content);
+            	//若聊天視窗無開啟的情況，未讀訊息要增加。
+//             	console.log("目前開啟視窗:"+ $("#onLineUser").val());
+//             	console.log("傳送者為:"+ msgVO.msg_from);
+            	if($("#onLineUser").val()!= msgVO.msg_from){
+            		console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+            		if(userMap.has(msgVO.msg_from)){
+            			console.log("有紀錄!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+            			userMap.set(msgVO.msg_from, userMap.get(msgVO.msg_from) + 1);
+            		}else{
+            			console.log("無紀錄!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+            			userMap.set(msgVO.msg_from, 1);
+            		}
+            		setMessageInnerHTML(msgVO.msg_from + "的未讀訊息有" + userMap.get(msgVO.msg_from));	
+            	}else{
+            		
+            		setMessageInnerHTML(msgVO.msg_from + "的未讀訊息有" + 0);
+            		
+            		//因為已經開啟跟該用戶聊天的視窗故要把訊息儲存成已讀(還沒寫)
+            	}
+            	
+            }          
         };
 
         //連接關閉的回調事件
@@ -117,16 +150,26 @@
         $("#text").val("");
     }
     
+    function setMessageInnerHTML(innerHTML) {
+        document.getElementById('message').innerHTML += innerHTML + '<br/>';
+    }    
+    
     //當選取清單變動時，查詢與該User的聊天紀錄      
     $(document).ready(function(){
         $("#onLineUser").change(function(){
+        	document.getElementById('message').innerHTML="";
         	var msg_from = $("#onLineUser").val();
             var message = {
                     "msg_from": msg_from,
                     "msg_to": document.getElementById('username').value,
                     "msg_type" : "getMessage"
                 };
-            webSocket.send(JSON.stringify(message));            
+            webSocket.send(JSON.stringify(message));
+            
+            //將未讀訊息數量改成0
+            if(userMap.has(msg_from)){
+            	userMap.set(msg_from,0);	
+            }            
         });
     });    
 </script>

@@ -41,9 +41,9 @@ public class WebSocket {
 	public static void setApplicationContext(ApplicationContext context) {
 	    applicationContext = context;
 	}
+	
 	private MsgService msgService;	 
-	
-	
+		
 	/**
      * 在線人數
      */
@@ -74,14 +74,13 @@ public class WebSocket {
      * @param session
      */
     @OnOpen
-    public void onOpen(@PathParam("username") String username, Session session) {
-    	addOnlineCount();
+    public void onOpen(@PathParam("username") String username, Session session) {    	
         this.username = username;
         this.session = session;        
         try {
             //把自己的資訊加入到map管理
             clients.put(username, this);
-            
+            addOnlineCount();    
             //查詢給自己的訊息
             msgService = applicationContext.getBean(MsgService.class);
             List lastMsg_list = msgService.getAllFromLastMessage(username);
@@ -113,8 +112,8 @@ public class WebSocket {
     @OnClose
     public void onClose() {
         try {
-        	subOnlineCount();
-            clients.remove(username);
+        	clients.remove(username);
+        	subOnlineCount();            
         } catch (Exception e) {
         	//下線發生錯誤
         	System.out.println(e.getMessage());
@@ -148,7 +147,7 @@ public class WebSocket {
                 if(clients.get(msgVO.getMsg_to())!= null) {
                 	sendMessageTo(JSON.toJSONString(msg_receive_map), msgVO.getMsg_to());
                 }                
-            }else {
+            }else if("getMessage".equals(jsonObject.getString("msg_type"))){
             	//查詢與對方的聊天紀錄
                 MsgVO msgVO = new MsgVO();
                 String msg_from = jsonObject.getString("msg_from");
@@ -156,14 +155,13 @@ public class WebSocket {
                 List msg_record_list = msgService.getConversationRecord(msg_from, msg_to);
                 Map<String, Object> msg_record_map = new HashMap<>();
                 msg_record_map.put("showRecord", msg_record_list);                
-                System.out.println(msg_record_list);
                 sendMessageTo(JSON.toJSONString(msg_record_map), msg_to);
                 
                 //令訊息狀態改為已讀
                 msgService.msgUpdateStatus(msg_from, msg_to);
+            }else {
+            	
             }
-
-                                   
             //呼叫getMemberInfoById
 //            RestTemplate restTemplate = new RestTemplate();
 //            String url = "http://192.168.50.93:9082/api/v1/org/getMember/" + msgVO.getFrom();
@@ -172,21 +170,7 @@ public class WebSocket {
 //            String strbody = restTemplate.exchange(url, HttpMethod.GET, entity,String.class).getBody();
 //            JSONObject jsonObject2 = JSON.parseObject(strbody);
 //            JSONObject usernameTest = jsonObject2.getJSONObject("RET");
-            
-            
-            //如果不是发给所有，那么就发给某一个人
-            //messageType 1代表上线 2代表下线 3代表在线名单  4代表普通消息
-//            Map<String, Object> map1 = new HashMap<>();
-//            map1.put("messageType", 4);
-//            map1.put("textMessage", msgVO.getMessage());
-//            map1.put("fromusername", msgVO.getFrom());
-//            if (msgVO.getMsg_to().equals("All")) {
-//                map1.put("tousername", "所有人");
-//                sendMessageAll(JSON.toJSONString(msgVO));
-//            } else {
-//                map1.put("tousername", msgVO.getTo());
-//                sendMessageTo(JSON.toJSONString(msgVO), msgVO.getMsg_to());
-//            }
+                     
         } catch (Exception e) {
 //            log.info("發生錯誤);
         }
