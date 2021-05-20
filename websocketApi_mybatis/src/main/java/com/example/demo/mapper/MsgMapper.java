@@ -36,8 +36,7 @@ public interface MsgMapper{
 
     //取得關鍵字搜尋筆數
     List<Map<String,Object>> searchKeyword(MsgVO msgVO);
-    
-    
+        
     //將未讀訊息修改成已讀狀態
     int msgUpdateStatus(String msg_from,String msg_to);
  
