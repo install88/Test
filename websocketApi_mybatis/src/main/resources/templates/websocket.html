@@ -59,66 +59,72 @@
             var obj = JSON.parse(received_msg);
             var msg_type = Object.keys(obj)[0];
             console.log("msg_type=" + msg_type);
-            if(msg_type == "showLastMsg"){
-                obj[msg_type].forEach(function(msgVO){
-    				console.log("發送人:" + msgVO.msg_from);
-    				console.log("接收人:" + msgVO.msg_to);
-    				console.log("訊息: "  + msgVO.msg_content);
-    				console.log("狀態: "  + msgVO.msg_status);
-    				console.log("時間: "  + new Date(msgVO.msg_time));
-    				console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-    				setMessageInnerHTML(msgVO.msg_from + ":" + msgVO.msg_content);
-                });            	
-            }else if(msg_type == "showMsgCount"){
-                obj[msg_type].forEach(function(msgVO){
-    				console.log("發送人:" + msgVO.msg_from);
-    				console.log("筆數: "  + msgVO.msg_count);
-    				console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-    				userMap.set(msgVO.msg_from,msgVO.msg_count);
-    				setMessageInnerHTML(msgVO.msg_from + ":" + userMap.get(msgVO.msg_from) + "筆未讀");
-                });            	
-            }else if(msg_type == "showRecord"){
-                obj[msg_type].forEach(function(msgVO){
-    				console.log("發送人:" + msgVO.msg_from);
-    				console.log("接收人:" + msgVO.msg_to);
-    				console.log("訊息: "  + msgVO.msg_content);
-    				console.log("狀態: "  + msgVO.msg_status);
-    				console.log("時間: "  + new Date(msgVO.msg_time));
-    				console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-    				setMessageInnerHTML(msgVO.msg_from + ":" + msgVO.msg_content);    				
-//     				userMap.set(msgVO.msg_from,msgVO.msg_count);
-//     				setMessageInnerHTML(msgVO.msg_from + "的未讀訊息有" + userMap.get(msgVO.msg_from));
-                });            	
-            }else if(msg_type == "receive"){
-            	var msgVO = obj[msg_type];
-            	setMessageInnerHTML(msgVO.msg_from + ":" + msgVO.msg_content);
-            	//若聊天視窗無開啟的情況，未讀訊息要增加。
-            	if($("#onLineUser").val()!= msgVO.msg_from){
-            		handleMapLogic(userMap, msgVO.msg_from, 1);
-            		setMessageInnerHTML(msgVO.msg_from + "的未讀訊息有" + userMap.get(msgVO.msg_from));	
-            	}else{            	
-            		setMessageInnerHTML(msgVO.msg_from + "的未讀訊息有" + 0);            		
-            		//已經開啟跟該用戶聊天的視窗，故要把訊息儲存成已讀。
-                    var message = {            
-                            "msg_from": msgVO.msg_from,
-                            "msg_to": msgVO.msg_to,
-                            "msg_type" : "updateMsgStatus"
-                        };        
-					//發送訊息至後端server
-					webSocket.send(JSON.stringify(message));            		            		
-            	}            	
-            }else{
-            	let keywordMap= new Map();
-            	//關鍵字搜尋資料 msg_type=showKeyword
-                obj[msg_type].forEach(function(msgVO){
-                	if(msgVO.msg_from == userName){
-                		handleMapLogic(keywordMap, msgVO.msg_to, msgVO.msg_count);
-                	}else{
-                		handleMapLogic(keywordMap, msgVO.msg_from, msgVO.msg_count);             		
-                	}
-                });  
-                console.log(keywordMap);
-            }     
+            switch(msg_type){
+	            case "showLastMsg": 
+	                obj[msg_type].forEach(function(msgVO){
+	    				console.log("發送人:" + msgVO.msg_from);
+	    				console.log("接收人:" + msgVO.msg_to);
+	    				console.log("訊息: "  + msgVO.msg_content);
+	    				console.log("狀態: "  + msgVO.msg_status);
+	    				console.log("時間: "  + new Date(msgVO.msg_time));
+	    				console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+	    				setMessageInnerHTML(msgVO.msg_from + ":" + msgVO.msg_content);
+	                });   
+                	break;
+				case "showMsgCount": 
+	                obj[msg_type].forEach(function(msgVO){
+	    				console.log("發送人:" + msgVO.msg_from);
+	    				console.log("筆數: "  + msgVO.msg_count);
+	    				console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+	    				userMap.set(msgVO.msg_from,msgVO.msg_count);
+	    				setMessageInnerHTML(msgVO.msg_from + ":" + userMap.get(msgVO.msg_from) + "筆未讀");
+	                });  
+                	break;                	
+				case "showRecord": 
+	                obj[msg_type].forEach(function(msgVO){
+	    				console.log("發送人:" + msgVO.msg_from);
+	    				console.log("接收人:" + msgVO.msg_to);
+	    				console.log("訊息: "  + msgVO.msg_content);
+	    				console.log("狀態: "  + msgVO.msg_status);
+	    				console.log("時間: "  + new Date(msgVO.msg_time));
+	    				console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+	    				setMessageInnerHTML(msgVO.msg_from + ":" + msgVO.msg_content);    				
+//	     				userMap.set(msgVO.msg_from,msgVO.msg_count);
+//	     				setMessageInnerHTML(msgVO.msg_from + "的未讀訊息有" + userMap.get(msgVO.msg_from));
+	                });
+                	break;                	
+                	
+				case "receive": 
+	            	var msgVO = obj[msg_type];
+	            	setMessageInnerHTML(msgVO.msg_from + ":" + msgVO.msg_content);
+	            	//若聊天視窗無開啟的情況，未讀訊息要增加。
+	            	if($("#onLineUser").val()!= msgVO.msg_from){
+	            		handleMapLogic(userMap, msgVO.msg_from, 1);
+	            		setMessageInnerHTML(msgVO.msg_from + "的未讀訊息有" + userMap.get(msgVO.msg_from));	
+	            	}else{            	
+	            		setMessageInnerHTML(msgVO.msg_from + "的未讀訊息有" + 0);            		
+	            		//已經開啟跟該用戶聊天的視窗，故要把訊息儲存成已讀。
+	                    var message = {            
+	                            "msg_from": msgVO.msg_from,
+	                            "msg_to": msgVO.msg_to,
+	                            "msg_type" : "updateMsgStatus"
+	                        };        
+						//發送訊息至後端server
+						webSocket.send(JSON.stringify(message));            		            		
+	            	}    
+                	break;                  	                	                	
+				default: 
+					let keywordMap= new Map();
+	             	//關鍵字搜尋資料 msg_type=showKeyword
+					obj[msg_type].forEach(function(msgVO){
+						if(msgVO.msg_from == userName){
+                			handleMapLogic(keywordMap, msgVO.msg_to, msgVO.msg_count);
+                		}else{
+                			handleMapLogic(keywordMap, msgVO.msg_from, msgVO.msg_count);             		
+                		}
+                	}); 
+					console.log(keywordMap);                           
+            }
         };
 
         //連接關閉的回調事件

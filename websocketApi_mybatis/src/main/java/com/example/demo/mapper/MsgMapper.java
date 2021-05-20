@@ -14,17 +14,12 @@ public interface MsgMapper{
      * 聊天室相關
      * @return
      */
-	
-	//測試查詢message全部資料
-//    List<MsgVO> queryMsgList();
-    
     //insert訊息至資料庫
     int msgSave(MsgVO msgVO);
         
     //User登入時點開好友清單，只顯示其好友們最新一筆資料(像line一樣)
-    List<MsgVO> getAllFromLastMessage(@Param("msg_to") String msg_to);  
-    
-    
+    List<MsgVO> getAllFromLastMessage(String msg_to);  
+        
     //點開對象聊天室後，查詢與該對象的聊天紀錄
     List<MsgVO> getConversationRecord(String msg_from, String msg_to);
     

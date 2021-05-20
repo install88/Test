@@ -1,25 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.example.demo.mapper.MsgMapper">
-
-<!--     <select id="queryMsgList" resultType="map"> -->
-<!--         select * from message -->
-<!--     </select> -->
-    
+<mapper namespace="com.example.demo.mapper.MsgMapper">    
 	<insert id="msgSave" parameterType="MsgVO">
 		insert into message(msg_from, msg_to, msg_content, msg_status)
 		values(#{msg_from, jdbcType=VARCHAR}, #{msg_to, jdbcType=VARCHAR}, #{msg_content, jdbcType=VARCHAR}, #{msg_status, jdbcType=INTEGER})
 	</insert> 
 	
-    <select id="getAllFromLastMessage" resultType="MsgVO">
+    <select id="getAllFromLastMessage" parameterType="String" resultType="MsgVO">
         select * from message msg  where msg_to = #{msg_to} and msg_time=(select max(msg_time) from message where msg_from=msg.msg_from)
     </select>
     
-    <select id="getConversationRecord" resultType="MsgVO">
+    <select id="getConversationRecord" parameterType="String" resultType="MsgVO">
         select * from message where (msg_from = #{msg_from} and msg_to = #{msg_to}) or (msg_from = #{msg_to} and msg_to = #{msg_from}) order by msg_time
     </select>
     
-    <select id="getUnreadCount" resultType="map">
+    <select id="getUnreadCount" parameterType="String" resultType="map">
         select msg_from,count(*) as msg_count from message where msg_to = #{msg_to} and msg_status=0 group by msg_from
     </select>   
     

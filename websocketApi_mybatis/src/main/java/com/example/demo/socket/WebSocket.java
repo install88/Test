@@ -42,8 +42,16 @@ public class WebSocket {
 	    applicationContext = context;
 	}
 	
-	private MsgService msgService;	 
-		
+	private MsgService msgService;
+	private final String SAVE = "save";
+	private final String GETMESSAGE = "getMessage";
+	private final String SEARCHKEYWORD = "searchKeyword";
+	private final String SHOWLASTMSG = "showLastMsg";
+	private final String SHOWMSGCOUNT = "showMsgCount";
+	private final String RECEIVE = "receive";
+	private final String SHOWRECORD = "showRecord";
+	private final String SHOWKEYWORD = "showKeyword";
+	
 	/**
      * 在線人數
      */
@@ -85,12 +93,12 @@ public class WebSocket {
             msgService = applicationContext.getBean(MsgService.class);
             List<MsgVO> lastMsg_list = msgService.getAllFromLastMessage(username);
             Map<String, Object> lastMsg_map = new HashMap<>();
-            lastMsg_map.put("showLastMsg", lastMsg_list);
+            lastMsg_map.put(SHOWLASTMSG, lastMsg_list);
             sendMessageTo(JSON.toJSONString(lastMsg_map), username);
             //查詢未讀訊息count
             List<Map<String, Object>> msg_count_list = msgService.getUnreadCount(username);
             Map<String, Object> msg_count_map = new HashMap<>();
-            msg_count_map.put("showMsgCount", msg_count_list);
+            msg_count_map.put(SHOWMSGCOUNT, msg_count_list);
             sendMessageTo(JSON.toJSONString(msg_count_map), username);                              
         } catch (IOException e) {
         	//上線的時候發生了錯誤
@@ -100,9 +108,12 @@ public class WebSocket {
 
     }
 
+    
+    /**
+     * Server發生錯誤
+     */    
     @OnError
-    public void onError(Session session, Throwable error) {
-    	//Server發生錯誤
+    public void onError(Session session, Throwable error) {    	
     	System.out.println(error.getMessage());
     }
 
@@ -130,49 +141,51 @@ public class WebSocket {
     public void onMessage(String message, Session session) {
         try {
         	msgService = applicationContext.getBean(MsgService.class);        	
-        	//parse前端傳來的訊息，並封裝至msgVO中
+        	//parse前端傳來的訊息
             JSONObject jsonObject = JSON.parseObject(message);
-            if("save".equals(jsonObject.getString("msg_type"))) {
-            	//發送訊息保存至DB
-                MsgVO msgVO = new MsgVO();
-                msgVO.setMsg_from(jsonObject.getString("msg_from"));
-                msgVO.setMsg_to(jsonObject.getString("msg_to"));
-                msgVO.setMsg_content(jsonObject.getString("msg_content"));            
-                msgVO.setMsg_status(jsonObject.getInteger("msg_status"));
-                msgService.saveMsg(msgVO);
-                
-                //將訊息推撥至對方
-                Map<String, Object> msg_receive_map = new HashMap<>();
-                msg_receive_map.put("receive", msgVO);
-                if(clients.get(msgVO.getMsg_to())!= null) {
-                	sendMessageTo(JSON.toJSONString(msg_receive_map), msgVO.getMsg_to());
-                }                
-            }else if("getMessage".equals(jsonObject.getString("msg_type"))){
-            	//查詢與對方的聊天紀錄
-                String msg_from = jsonObject.getString("msg_from");
-                String msg_to = jsonObject.getString("msg_to");
-                List<MsgVO> msg_record_list = msgService.getConversationRecord(msg_from, msg_to);
-                Map<String, Object> msg_record_map = new HashMap<>();
-                msg_record_map.put("showRecord", msg_record_list);                
-                sendMessageTo(JSON.toJSONString(msg_record_map), msg_to);
-                
-                //令訊息狀態改為已讀
-                msgService.msgUpdateStatus(msg_from, msg_to);
-            }else if("searchKeyword".equals(jsonObject.getString("msg_type"))) {//處理搜尋keyword
-            	MsgVO msgVO = new MsgVO();            	
-                msgVO.setMsg_from(jsonObject.getString("msg_from"));
-                msgVO.setMsg_to(jsonObject.getString("msg_to"));
-                msgVO.setMsg_content("%" + jsonObject.getString("msg_content") + "%");                        	
-                List<Map<String, Object>> msg_keyword_list = msgService.searchKeyword(msgVO);
-                Map<String, Object> msg_keyword_map = new HashMap<>();
-                msg_keyword_map.put("showKeyword", msg_keyword_list);                
-                sendMessageTo(JSON.toJSONString(msg_keyword_map), msgVO.getMsg_from());                            	
-            }else {
-                String msg_from = jsonObject.getString("msg_from");
-                String msg_to = jsonObject.getString("msg_to");            	
-                //令訊息狀態改為已讀
-                msgService.msgUpdateStatus(msg_from, msg_to);            	
+            String msg_type = jsonObject.getString("msg_type");
+            switch(msg_type) {
+            	case SAVE:
+                    MsgVO msgVO = new MsgVO();
+                    msgVO.setMsg_from(jsonObject.getString("msg_from"));
+                    msgVO.setMsg_to(jsonObject.getString("msg_to"));
+                    msgVO.setMsg_content(jsonObject.getString("msg_content"));            
+                    msgVO.setMsg_status(jsonObject.getInteger("msg_status"));
+                    msgService.saveMsg(msgVO);                
+                    //將訊息推撥至對方
+                    Map<String, Object> msg_receive_map = new HashMap<>();
+                    msg_receive_map.put(RECEIVE, msgVO);
+                    if(clients.get(msgVO.getMsg_to())!= null) {
+                    	sendMessageTo(JSON.toJSONString(msg_receive_map), msgVO.getMsg_to());
+                    } 
+                    break;
+            	case GETMESSAGE:
+                	//查詢與對方的聊天紀錄
+                    String msg_from = jsonObject.getString("msg_from");
+                    String msg_to = jsonObject.getString("msg_to");
+                    List<MsgVO> msg_record_list = msgService.getConversationRecord(msg_from, msg_to);
+                    Map<String, Object> msg_record_map = new HashMap<>();
+                    msg_record_map.put(SHOWRECORD, msg_record_list);                
+                    sendMessageTo(JSON.toJSONString(msg_record_map), msg_to);                
+                    //令訊息狀態改為已讀
+                    msgService.msgUpdateStatus(msg_from, msg_to);
+                    break;
+            	case SEARCHKEYWORD:
+                	MsgVO msgVO_3 = new MsgVO();            	
+                	msgVO_3.setMsg_from(jsonObject.getString("msg_from"));
+                	msgVO_3.setMsg_to(jsonObject.getString("msg_to"));
+                	msgVO_3.setMsg_content("%" + jsonObject.getString("msg_content") + "%");                        	
+                    List<Map<String, Object>> msg_keyword_list = msgService.searchKeyword(msgVO_3);
+                    Map<String, Object> msg_keyword_map = new HashMap<>();
+                    msg_keyword_map.put(SHOWKEYWORD, msg_keyword_list);                
+                    sendMessageTo(JSON.toJSONString(msg_keyword_map), msgVO_3.getMsg_from());
+                    break;
+                default:          	
+                    //令訊息狀態改為已讀
+                    msgService.msgUpdateStatus(jsonObject.getString("msg_from"), jsonObject.getString("msg_to")); 
+                    break;
             }
+            
             //呼叫getMemberInfoById
 //            RestTemplate restTemplate = new RestTemplate();
 //            String url = "http://192.168.50.93:9082/api/v1/org/getMember/" + msgVO.getFrom();
