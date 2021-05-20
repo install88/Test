@@ -30,6 +30,12 @@ public class MsgService {
     	return msgMapper.getUnreadCount(msg_to);
     }     
     
+    
+    public List<Map<String,Object>> searchKeyword(MsgVO msgVO) {
+    	return msgMapper.searchKeyword(msgVO);
+    }       
+    
+    
     public void msgUpdateStatus(String msg_from, String msg_to) {
     	msgMapper.msgUpdateStatus(msg_from, msg_to);
     }    

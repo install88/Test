@@ -11,6 +11,8 @@
 <body>
 	<div style="margin: auto;text-align: center">
 	    <h1>Welcome to websocket</h1>
+	    <input id="search" type="text"/>
+	    <button onclick="search()">搜尋</button>
 	</div>
 	<br/>
 	<div style="margin: auto;text-align: center">
@@ -87,36 +89,41 @@
 //     				userMap.set(msgVO.msg_from,msgVO.msg_count);
 //     				setMessageInnerHTML(msgVO.msg_from + "的未讀訊息有" + userMap.get(msgVO.msg_from));
                 });            	
-            }else{
+            }else if(msg_type == "receive"){
             	var msgVO = obj[msg_type];
             	setMessageInnerHTML(msgVO.msg_from + ":" + msgVO.msg_content);
             	//若聊天視窗無開啟的情況，未讀訊息要增加。
-//             	console.log("目前開啟視窗:"+ $("#onLineUser").val());
-//             	console.log("傳送者為:"+ msgVO.msg_from);
             	if($("#onLineUser").val()!= msgVO.msg_from){
-            		console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-            		if(userMap.has(msgVO.msg_from)){
-            			console.log("有紀錄!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-            			userMap.set(msgVO.msg_from, userMap.get(msgVO.msg_from) + 1);
-            		}else{
-            			console.log("無紀錄!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-            			userMap.set(msgVO.msg_from, 1);
-            		}
+            		handleMapLogic(userMap, msgVO.msg_from, 1);
             		setMessageInnerHTML(msgVO.msg_from + "的未讀訊息有" + userMap.get(msgVO.msg_from));	
-            	}else{
-            		
-            		setMessageInnerHTML(msgVO.msg_from + "的未讀訊息有" + 0);
-            		
-            		//因為已經開啟跟該用戶聊天的視窗故要把訊息儲存成已讀(還沒寫)
-            	}
-            	
-            }          
+            	}else{            	
+            		setMessageInnerHTML(msgVO.msg_from + "的未讀訊息有" + 0);            		
+            		//已經開啟跟該用戶聊天的視窗，故要把訊息儲存成已讀。
+                    var message = {            
+                            "msg_from": msgVO.msg_from,
+                            "msg_to": msgVO.msg_to,
+                            "msg_type" : "updateMsgStatus"
+                        };        
+					//發送訊息至後端server
+					webSocket.send(JSON.stringify(message));            		            		
+            	}            	
+            }else{
+            	let keywordMap= new Map();
+            	//關鍵字搜尋資料 msg_type=showKeyword
+                obj[msg_type].forEach(function(msgVO){
+                	if(msgVO.msg_from == userName){
+                		handleMapLogic(keywordMap, msgVO.msg_to, msgVO.msg_count);
+                	}else{
+                		handleMapLogic(keywordMap, msgVO.msg_from, msgVO.msg_count);             		
+                	}
+                });  
+                console.log(keywordMap);
+            }     
         };
 
         //連接關閉的回調事件
         webSocket.onclose = function () {
             console.log("連接已關閉...");
-//             setMessageInnerHTML("连接已经关闭....");
         };
     } else {
         // 瀏覽器不支持 WebSocket
@@ -140,7 +147,7 @@
         var message = {            
             "msg_from": document.getElementById('username').value,
             "msg_to": selectText,
-            "message": document.getElementById('text').value,
+            "msg_content": document.getElementById('text').value,
             "msg_status" : 0,
             "msg_type" : "save"
         };
@@ -149,6 +156,29 @@
         webSocket.send(JSON.stringify(message));
         $("#text").val("");
     }
+    
+    //處理map
+    function handleMapLogic(map, key, count) {
+    	if(map.has(key)){
+    		map.set(key, map.get(key) + count);
+    	}else{
+    		map.set(key, count)
+    	}
+    }       
+    
+    //點擊搜尋按鈕，搜尋關鍵字。
+    function search() {
+        var searchText = $("#search").val();
+        var message = {            
+            "msg_from": $("#username").val(),
+            "msg_to": $("#username").val(),
+            "msg_content": searchText,
+            "msg_type" : "searchKeyword"
+        };        
+      	//發送訊息至後端server
+        webSocket.send(JSON.stringify(message));
+        $("#search").val("");
+    }    
     
     function setMessageInnerHTML(innerHTML) {
         document.getElementById('message').innerHTML += innerHTML + '<br/>';
