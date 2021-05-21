@@ -51,6 +51,7 @@ public class WebSocket {
 	private final String RECEIVE = "receive";
 	private final String SHOWRECORD = "showRecord";
 	private final String SHOWKEYWORD = "showKeyword";
+	private final String BROADCAST = "broadcast";
 	
 	/**
      * 在線人數
@@ -145,7 +146,7 @@ public class WebSocket {
             JSONObject jsonObject = JSON.parseObject(message);
             String msg_type = jsonObject.getString("msg_type");
             switch(msg_type) {
-            	case SAVE:
+            	case SAVE://訊息儲存至DB
                     MsgVO msgVO = new MsgVO();
                     msgVO.setMsg_from(jsonObject.getString("msg_from"));
                     msgVO.setMsg_to(jsonObject.getString("msg_to"));
@@ -159,8 +160,7 @@ public class WebSocket {
                     	sendMessageTo(JSON.toJSONString(msg_receive_map), msgVO.getMsg_to());
                     } 
                     break;
-            	case GETMESSAGE:
-                	//查詢與對方的聊天紀錄
+            	case GETMESSAGE://查詢與對方的聊天紀錄                	
                     String msg_from = jsonObject.getString("msg_from");
                     String msg_to = jsonObject.getString("msg_to");
                     List<MsgVO> msg_record_list = msgService.getConversationRecord(msg_from, msg_to);
@@ -170,7 +170,7 @@ public class WebSocket {
                     //令訊息狀態改為已讀
                     msgService.msgUpdateStatus(msg_from, msg_to);
                     break;
-            	case SEARCHKEYWORD:
+            	case SEARCHKEYWORD://關鍵字搜尋    
                 	MsgVO msgVO_3 = new MsgVO();            	
                 	msgVO_3.setMsg_from(jsonObject.getString("msg_from"));
                 	msgVO_3.setMsg_to(jsonObject.getString("msg_to"));
@@ -179,9 +179,13 @@ public class WebSocket {
                     Map<String, Object> msg_keyword_map = new HashMap<>();
                     msg_keyword_map.put(SHOWKEYWORD, msg_keyword_list);                
                     sendMessageTo(JSON.toJSONString(msg_keyword_map), msgVO_3.getMsg_from());
-                    break;
-                default:          	
-                    //令訊息狀態改為已讀
+                    break;                    
+            	case BROADCAST://廣播訊息送至在線人員
+                    Map<String, Object> msg_broadcast_map = new HashMap<>();
+                    msg_broadcast_map.put(BROADCAST, jsonObject.getString("msg_content"));            		            		
+            		sendMessageAll(JSON.toJSONString(msg_broadcast_map));
+            		break;
+                default://令訊息狀態改為已讀          	                    
                     msgService.msgUpdateStatus(jsonObject.getString("msg_from"), jsonObject.getString("msg_to")); 
                     break;
             }
@@ -211,7 +215,6 @@ public class WebSocket {
     //廣播給在線上的所有User
     public void sendMessageAll(String message) throws IOException {
         for (WebSocket item : clients.values()) {
-        	System.out.println(item.username);
             item.session.getAsyncRemote().sendText(message);
         }
     }
