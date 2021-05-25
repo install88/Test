@@ -7,7 +7,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
-import com.example.demo.socket.WebSocket;
+
+import com.example.demo.controller.WebSocketController;
 
 
 @SpringBootApplication
@@ -15,7 +16,7 @@ import com.example.demo.socket.WebSocket;
 public class TestApplication {
 	public static void main(String[] args) {
 		ConfigurableApplicationContext configurableApplicationContext = SpringApplication.run(TestApplication.class, args);
-		WebSocket.setApplicationContext(configurableApplicationContext);
+		WebSocketController.setApplicationContext(configurableApplicationContext);
 	}
 
 }
