@@ -122,7 +122,7 @@
 // 	    				console.log("訊息: "  + msgVO.msg_content);
 // 	    				console.log("狀態: "  + msgVO.msg_status);
 // 	    				console.log("時間: "  + new Date(msgVO.msg_time));
-// 	    				console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");	    				    				
+// 	    				console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 	                });
 	                //若訊息都是已讀狀態，將scrollbar拉至最底下。
 	                if(haveRead == false){
@@ -234,7 +234,6 @@
     function setMessageInnerHTML_adjustBar(innerHTML) {
         document.getElementById('message').innerHTML += "<div id='adjust_bar'>" + innerHTML + '<div/>';
         var target_top = $("#adjust_bar").offset().top;
-        console.log(target_top);
         document.getElementById('inner-container').scrollTop = target_top;                    
     }      
     

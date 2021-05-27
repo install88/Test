@@ -11,7 +11,11 @@
     </select>
     
     <select id="getConversationRecord" parameterType="String" resultType="MsgVO">
-        select * from message where (msg_from = #{msg_from} and msg_to = #{msg_to}) or (msg_from = #{msg_to} and msg_to = #{msg_from}) order by msg_time
+<!--         select * from message where (msg_from = #{msg_from} and msg_to = #{msg_to}) or (msg_from = #{msg_to} and msg_to = #{msg_from}) order by msg_time -->
+		select * from message where (msg_from = #{msg_from} and msg_to = #{msg_to})
+		union all
+		select * from message where (msg_from = #{msg_to} and msg_to = #{msg_from})
+		order by msg_time;        
     </select>
     
     <select id="getUnreadCount" parameterType="String" resultType="map">

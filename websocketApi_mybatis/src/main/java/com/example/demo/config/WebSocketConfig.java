@@ -12,10 +12,8 @@ import com.example.demo.service.MsgService;
  */
 @Configuration
 public class WebSocketConfig {
-
     @Bean
     public ServerEndpointExporter serverEndpointExporter() {
         return new ServerEndpointExporter();   
     }
-    
 }

@@ -5,6 +5,8 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.example.demo.VO.MsgVO;
 import com.example.demo.mapper.MsgMapper;
 
@@ -14,6 +16,7 @@ public class MsgService {
 	@Autowired
     private MsgMapper msgMapper;
     
+	@Transactional
     public void saveMsg(MsgVO msgVO) {
     	msgMapper.msgSave(msgVO);
     }
@@ -35,7 +38,7 @@ public class MsgService {
     	return msgMapper.searchKeyword(msgVO);
     }       
     
-    
+    @Transactional
     public void msgUpdateStatus(String msg_from, String msg_to) {
     	msgMapper.msgUpdateStatus(msg_from, msg_to);
     }    
